@@ -4,6 +4,8 @@ import { z } from 'zod';
 import { sql } from '@vercel/postgres';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
+import { signIn } from '@/auth';
+import { AuthError } from 'next-auth';
 
 const FormSchema = z.object({
     id: z.string(),
@@ -19,33 +21,9 @@ const anak = z.object({
     email: z.string(),
     image_url: z.string()
 });
-const CreateReservations = FormSchema.omit({ id: true, date: true });
+
 const UpdateReservation = FormSchema.omit({ id: true, date: true });
 const date = new Date().toISOString().split('T')[0];
-
-// Reservations
-export async function createReservation(formData: FormData) {
-    const { customerId, amount, status } = CreateReservations.parse({
-        customerId: formData.get('customerId'),
-        amount: formData.get('amount'),
-        status: formData.get('status'),
-    });
-    const amountInCents = amount * 100;
-    const date = new Date().toISOString().split('T')[0];
-
-    try {
-        await sql`
-    INSERT INTO reservations (customer_id, amount, status, date)
-    VALUES (${customerId}, ${amountInCents}, ${status}, ${date})
-  `;
-    } catch (error) {
-        return {
-            message: 'Database Error: Failed to Create Reservation.',
-        };
-    }
-    revalidatePath('/dashboard/reservations');
-    redirect('/dashboard/reservations');
-}
 
 export async function updateReservations(id: string, formData: FormData) {
     const { customerId, amount, status } = UpdateReservation.parse({
@@ -64,6 +42,32 @@ export async function updateReservations(id: string, formData: FormData) {
     `;
     } catch (error) {
         return { message: 'Database Error: Failed to Update Reservations.' };
+    }
+
+    revalidatePath('/dashboard/reservations');
+    redirect('/dashboard/reservations');
+}
+
+const CreateReservations = FormSchema.omit({ id: true, date: true });
+
+export async function CreateReservation(formData: FormData) {
+    const { customerId, amount, status } = CreateReservations.parse({
+        customerId: formData.get('customerId'),
+        amount: formData.get('amount'),
+        status: formData.get('status'),
+      });
+
+    const amountInCents = amount * 100;
+
+    try {
+      await sql`
+        INSERT INTO reservations (customer_id, amount, status, date)
+        VALUES (${customerId}, ${amountInCents}, ${status}, ${date})
+      `;
+    } catch (error) {
+      return {
+        message: 'Database Error: Failed to Create Reservation.',
+      };
     }
 
     revalidatePath('/dashboard/reservations');
@@ -150,7 +154,6 @@ export async function deleteInvoice(id: string) {
 
 // customers
 const CreateCustomer = anak.omit({ id: true, date: true });
-const UpdateCustomer = anak.omit({ id: true, date: true });
 
 export async function createCustomer(formData: FormData) {
     const img = formData.get('image_url');
@@ -173,6 +176,8 @@ export async function createCustomer(formData: FormData) {
     revalidatePath('/dashboard/customers');
     redirect('/dashboard/customers');
 }
+
+const UpdateCustomer = anak.omit({ id: true, date: true });
 
 export async function updateCustomer(id: string, formData: FormData) {
     const img = formData.get('image_url');
@@ -201,3 +206,22 @@ export async function deleteCustomer(id: string) {
     await sql`DELETE FROM customers WHERE id = ${id}`;
     revalidatePath('/dashboard/customers');
 }
+
+export async function authenticate(
+    prevState: string | undefined,
+    formData: FormData,
+  ) {
+    try {
+      await signIn('credentials', formData);
+    } catch (error) {
+      if (error instanceof AuthError) {
+        switch (error.type) {
+          case 'CredentialsSignin':
+            return 'Invalid credentials.';
+          default:
+            return 'Something went wrong.';
+        }
+      }
+      throw error;
+    }
+  }

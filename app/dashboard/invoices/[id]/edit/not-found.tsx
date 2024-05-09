@@ -1,18 +1,24 @@
 import Link from 'next/link';
-import { FaceFrownIcon } from '@heroicons/react/24/outline';
- 
+import { FaceFrownIcon, ExclamationCircleIcon } from '@heroicons/react/24/outline';
+
 export default function NotFound() {
-  return (
-    <main className="flex h-full flex-col items-center justify-center gap-2">
-      <FaceFrownIcon className="w-10 text-gray-400" />
-      <h2 className="text-xl font-semibold">404 Not Found</h2>
-      <p>Could not find the requested invoice.</p>
-      <Link
-        href="/dashboard/invoices"
-        className="mt-4 rounded-md bg-blue-500 px-4 py-2 text-sm text-white transition-colors hover:bg-blue-400"
-      >
-        Go Back
-      </Link>
-    </main>
-  );
+    return (
+        <main className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+            <div className="max-w-md w-full space-y-8 p-10 bg-white rounded-xl shadow-lg z-10">
+                <div className="text-center">
+                    <div className="flex items-center justify-center">
+                        <ExclamationCircleIcon className="h-12 w-auto text-red-500" />
+                        <h2 className="ml-2 text-xl font-semibold text-gray-900">404 Page Not Found</h2>
+                    </div>
+                    <p>Sorry, the page you are looking for could not be found.</p>
+                    <Link
+                        href="/dashboard/reservations" 
+                        className="mt-4 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-800 focus:outline-none focus:ring-indigo focus:border-indigo active:bg-indigo active:text-white transition duration=150 ease-in-out"
+                    >
+                        Go Back to Home
+                    </Link>
+                </div>
+            </div>
+        </main>
+    );
 }
